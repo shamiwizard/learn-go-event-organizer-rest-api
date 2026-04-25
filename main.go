@@ -4,11 +4,12 @@ import (
 	"net/http"
 	"github.com/gin-gonic/gin"
 	"example.com/event_booking/models"
-
+	"example.com/event_booking/db"
 )
 
 func main() {
 	server := gin.Default()
+	db.InitDB()
 
 	server.GET("/ping", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
