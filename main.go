@@ -25,8 +25,15 @@ func main() {
 }
 
 func getEvents(context *gin.Context) {
-	events := models.GetAllEvents()
-	context.JSON(http.StatusOK, gin.H{"message": "hellow", "events": events })
+	events, err := models.GetAllEvents()
+
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"message": "Could not find events. Try later." })
+
+		return
+	}
+
+	context.JSON(http.StatusOK, gin.H{ "events": events })
 }
 
 func createEvent(context *gin.Context) {
