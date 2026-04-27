@@ -13,7 +13,7 @@ func InitDB() {
 	DB, err = sql.Open("sqlite3", "./api.db")
 
 	if err != nil {
-		panic(fmt.Sprint("Could not connect to the database. Error:", err))
+		panic(fmt.Sprint("Could not connect to the database. Error: ", err))
 	}
 
 	DB.SetMaxOpenConns(10)

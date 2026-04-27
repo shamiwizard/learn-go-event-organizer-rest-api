@@ -38,9 +38,12 @@ func createEvent(context *gin.Context) {
 		return
 	}
 
-	event.ID = 1
 	event.UserID = 1
-	event.Save()
+	err = event.Save()
 
-	context.JSON(http.StatusCreated, gin.H{ "message": "Event created", "event": event})
+	if err != nil {
+		context.JSON(http.StatusUnprocessableEntity, gin.H{"message": "Could not process the data." })
+	} else {
+		context.JSON(http.StatusCreated, gin.H{ "message": "Event created", "event": event})
+	}
 }
