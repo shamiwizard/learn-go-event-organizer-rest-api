@@ -75,7 +75,7 @@ func updateEvent(context *gin.Context) {
 	err = context.ShouldBindJSON(&event)
 
 	if err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"message": "Could not create an event", "error": err})
+		context.JSON(http.StatusBadRequest, gin.H{"message": "Could not update an event", "error": err})
 		return
 	}
 
@@ -83,9 +83,35 @@ func updateEvent(context *gin.Context) {
 
 
 	if err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"message": "Could not create an event", "error": err})
+		context.JSON(http.StatusBadRequest, gin.H{"message": "Could not update an event", "error": err})
 		return
 	}
 
 	context.JSON(http.StatusOK, gin.H{ "message": "Event updated", "event": event})
+}
+
+func deleteEvent(context *gin.Context) {
+	id, err := strconv.ParseInt(context.Param("id"), 10, 64)
+
+	if err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"message": "Could not procces an ID." })
+		return
+	}
+
+
+	event, err := models.FindEvent(id)
+
+	if err != nil {
+		context.JSON(http.StatusNotFound, gin.H{})
+		return
+	}
+
+	err = event.Delete()
+
+	if err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"message": "Could not delete an event", "error": err})
+		return
+	}
+
+	context.JSON(http.StatusOK, gin.H{ "message": "Event deleted" })
 }
