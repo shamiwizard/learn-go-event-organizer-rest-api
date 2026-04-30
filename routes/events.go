@@ -23,10 +23,10 @@ func getEvent(context *gin.Context) {
 	id, err := strconv.ParseInt(context.Param("id"), 10, 64)
 
 	if err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"message": "Could procces an ID." })
-
+		context.JSON(http.StatusBadRequest, gin.H{"message": "Could not procces an ID." })
 		return
 	}
+
 	event, err := models.FindEvent(id)
 
 	if err != nil {
@@ -55,4 +55,37 @@ func createEvent(context *gin.Context) {
 	} else {
 		context.JSON(http.StatusCreated, gin.H{ "message": "Event created", "event": event})
 	}
+}
+
+func updateEvent(context *gin.Context) {
+	id, err := strconv.ParseInt(context.Param("id"), 10, 64)
+
+	if err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"message": "Could not procces an ID." })
+		return
+	}
+	
+	event, err := models.FindEvent(id)
+
+	if err != nil {
+		context.JSON(http.StatusNotFound, gin.H{})
+		return
+	}
+
+	err = context.ShouldBindJSON(&event)
+
+	if err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"message": "Could not create an event", "error": err})
+		return
+	}
+
+	err = event.Update()
+
+
+	if err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"message": "Could not create an event", "error": err})
+		return
+	}
+
+	context.JSON(http.StatusOK, gin.H{ "message": "Event updated", "event": event})
 }
