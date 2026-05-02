@@ -2,6 +2,7 @@ package models
 
 import (
 	"example.com/event_booking/db"
+	"example.com/event_booking/utils"
 )
 
 type User struct {
@@ -24,6 +25,12 @@ func (user *User) Save() error {
 	}
 
 	defer stmt.Close()
+
+	user.Password, err = utils.HashPassword(user.Password)
+
+	if err != nil {
+		return err
+	}
 
 	result, err := stmt.Exec(user.Email, user.Password)
 	
