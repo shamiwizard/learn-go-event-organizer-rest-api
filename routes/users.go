@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"fmt"
 	"net/http"
 	"github.com/gin-gonic/gin"
 	"example.com/event_booking/models"
@@ -48,6 +49,8 @@ func login(context *gin.Context) {
 		context.JSON(http.StatusUnauthorized, gin.H{"message": "Invalid params", "error": err})
 		return
 	}
+
+	fmt.Println(utils.VerifyToken(token))
 	
 	context.JSON(http.StatusOK, gin.H{ "message": "Sign", "token": token })
 }

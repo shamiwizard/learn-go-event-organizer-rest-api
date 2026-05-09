@@ -47,7 +47,7 @@ func createEvent(context *gin.Context) {
 		return
 	}
 
-	event.UserID = 1
+	event.UserID = context.MustGet("currentUser").(models.User).ID
 	err = event.Save()
 
 	if err != nil {

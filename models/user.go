@@ -12,6 +12,23 @@ type User struct {
 	Password string `binding:"required"`
 }
 
+var CurrentUser *User
+
+func FindByIdEmail(id int64, email string) *User {
+	query := "SELECT * FROM users WHERE id = ? AND email = ?;"
+
+	row := db.DB.QueryRow(query, id, email)
+
+	var user User
+
+	err := row.Scan(&user.ID, &user.Email, &user.Password)
+
+	if err != nil {
+		return nil
+	}
+
+	return &user
+}
 
 func (user *User) Save() error {
 	query := `
@@ -45,11 +62,11 @@ func (user *User) Save() error {
 }
 
 func (user *User) ValidateCredentials() error {
-	row := db.DB.QueryRow("SELECT password FROM users WHERE email = ?;", user.Email)
+	row := db.DB.QueryRow("SELECT id, password FROM users WHERE email = ?;", user.Email)
 
 	var hashedPassword string 
 
-	err := row.Scan(&hashedPassword)
+	err := row.Scan(&user.ID, &hashedPassword)
 
 	if err != nil {
 		return errors.New("Invalid credentials")
