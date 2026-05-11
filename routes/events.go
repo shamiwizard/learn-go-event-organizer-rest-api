@@ -65,7 +65,8 @@ func updateEvent(context *gin.Context) {
 		return
 	}
 	
-	event, err := models.FindEvent(id)
+	userId := context.MustGet("currentUser").(models.User).ID
+	event, err := models.FindEventByIdUserId(id, userId)
 
 	if err != nil {
 		context.JSON(http.StatusNotFound, gin.H{})
@@ -80,7 +81,6 @@ func updateEvent(context *gin.Context) {
 	}
 
 	err = event.Update()
-
 
 	if err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{"message": "Could not update an event", "error": err})
@@ -97,9 +97,8 @@ func deleteEvent(context *gin.Context) {
 		context.JSON(http.StatusBadRequest, gin.H{"message": "Could not procces an ID." })
 		return
 	}
-
-
-	event, err := models.FindEvent(id)
+	userId := context.MustGet("currentUser").(models.User).ID
+	event, err := models.FindEventByIdUserId(id, userId)
 
 	if err != nil {
 		context.JSON(http.StatusNotFound, gin.H{})
