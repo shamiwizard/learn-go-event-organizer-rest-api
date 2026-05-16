@@ -2,6 +2,7 @@ package models
 
 import (
 	"time"
+	"errors"
 	"example.com/event_booking/db"
 )
 
@@ -140,4 +141,37 @@ func (event * Event) Delete() error {
 	_, err = stmt.Exec(event.ID)
 
 	return err
+}
+
+func (event *Event) RegisterUser(user *User) error {
+	if event.isUserOwner(user) {
+		return errors.New("User is an owner of the event")
+	}
+
+	
+	if isUserRegisteredToEvent(user, event) {
+		return errors.New("User already registered")
+	}
+
+	return registerUserToEvent(user, event)
+}
+
+func (event *Event) CancelRegistration(user *User) error {
+	if event.isUserOwner(user) {
+		return errors.New("User is an owner of the event")
+	}
+
+	if !isUserRegisteredToEvent(user, event) {
+		return errors.New("User is not registered to the event")
+	}
+
+	return cancelUserEvetRegistration(user, event)
+}
+
+func (event *Event) isUserOwner(user *User) bool {
+	if event.UserID == user.ID {
+		return true
+	}
+
+	return false
 }
