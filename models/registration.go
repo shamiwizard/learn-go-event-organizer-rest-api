@@ -40,7 +40,6 @@ func cancelUserEvetRegistration(user *User, event *Event) error {
 func isUserRegisteredToEvent(user *User, event *Event) bool {
 	query := "SELECT EXISTS(SELECT 1 FROM registrations WHERE event_id = ? AND user_id = ?);"
 
-
 	var recordExists bool
 	err := db.DB.QueryRow(query, event.ID, user.ID).Scan(&recordExists)
 

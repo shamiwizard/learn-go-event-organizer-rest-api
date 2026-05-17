@@ -7,8 +7,8 @@ import (
 )
 
 type User struct {
-	ID int64
-	Email string `binding:"required"`
+	ID       int64
+	Email    string `binding:"required"`
 	Password string `binding:"required"`
 }
 
@@ -51,20 +51,20 @@ func (user *User) Save() error {
 	}
 
 	result, err := stmt.Exec(user.Email, user.Password)
-	
+
 	if err != nil {
 		return err
 	}
 
 	user.ID, err = result.LastInsertId()
 
-	return err	
+	return err
 }
 
 func (user *User) ValidateCredentials() error {
 	row := db.DB.QueryRow("SELECT id, password FROM users WHERE email = ?;", user.Email)
 
-	var hashedPassword string 
+	var hashedPassword string
 
 	err := row.Scan(&user.ID, &hashedPassword)
 

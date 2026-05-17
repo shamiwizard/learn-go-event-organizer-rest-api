@@ -1,10 +1,10 @@
 package middleware
 
 import (
-	"net/http"
-	"github.com/gin-gonic/gin"
 	"example.com/event_booking/models"
 	"example.com/event_booking/utils"
+	"github.com/gin-gonic/gin"
+	"net/http"
 )
 
 func Authenticate(context *gin.Context) {
@@ -40,4 +40,3 @@ func Authenticate(context *gin.Context) {
 
 	context.Next()
 }
-

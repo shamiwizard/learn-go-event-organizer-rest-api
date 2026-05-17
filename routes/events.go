@@ -1,29 +1,29 @@
 package routes
 
 import (
+	"example.com/event_booking/models"
+	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
-	"github.com/gin-gonic/gin"
-	"example.com/event_booking/models"
 )
 
 func getEvents(context *gin.Context) {
 	events, err := models.GetAllEvents()
 
 	if err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"message": "Could not find events. Try later." })
+		context.JSON(http.StatusInternalServerError, gin.H{"message": "Could not find events. Try later."})
 
 		return
 	}
 
-	context.JSON(http.StatusOK, gin.H{ "events": events })
+	context.JSON(http.StatusOK, gin.H{"events": events})
 }
 
 func getEvent(context *gin.Context) {
 	id, err := strconv.ParseInt(context.Param("id"), 10, 64)
 
 	if err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"message": "Could not procces an ID." })
+		context.JSON(http.StatusBadRequest, gin.H{"message": "Could not procces an ID."})
 		return
 	}
 
@@ -34,7 +34,6 @@ func getEvent(context *gin.Context) {
 		return
 	}
 
-	
 	context.JSON(http.StatusOK, gin.H{"event": event})
 }
 
@@ -51,9 +50,9 @@ func createEvent(context *gin.Context) {
 	err = event.Save()
 
 	if err != nil {
-		context.JSON(http.StatusUnprocessableEntity, gin.H{"message": "Could not process the data." })
+		context.JSON(http.StatusUnprocessableEntity, gin.H{"message": "Could not process the data."})
 	} else {
-		context.JSON(http.StatusCreated, gin.H{ "message": "Event created", "event": event})
+		context.JSON(http.StatusCreated, gin.H{"message": "Event created", "event": event})
 	}
 }
 
@@ -61,10 +60,10 @@ func updateEvent(context *gin.Context) {
 	id, err := strconv.ParseInt(context.Param("id"), 10, 64)
 
 	if err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"message": "Could not procces an ID." })
+		context.JSON(http.StatusBadRequest, gin.H{"message": "Could not procces an ID."})
 		return
 	}
-	
+
 	userId := context.MustGet("currentUser").(models.User).ID
 	event, err := models.FindEventByIdUserId(id, userId)
 
@@ -87,14 +86,14 @@ func updateEvent(context *gin.Context) {
 		return
 	}
 
-	context.JSON(http.StatusOK, gin.H{ "message": "Event updated", "event": event})
+	context.JSON(http.StatusOK, gin.H{"message": "Event updated", "event": event})
 }
 
 func deleteEvent(context *gin.Context) {
 	id, err := strconv.ParseInt(context.Param("id"), 10, 64)
 
 	if err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"message": "Could not procces an ID." })
+		context.JSON(http.StatusBadRequest, gin.H{"message": "Could not procces an ID."})
 		return
 	}
 	userId := context.MustGet("currentUser").(models.User).ID
@@ -112,5 +111,5 @@ func deleteEvent(context *gin.Context) {
 		return
 	}
 
-	context.JSON(http.StatusOK, gin.H{ "message": "Event deleted" })
+	context.JSON(http.StatusOK, gin.H{"message": "Event deleted"})
 }

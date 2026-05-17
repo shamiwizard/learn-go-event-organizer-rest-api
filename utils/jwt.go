@@ -3,9 +3,9 @@ package utils
 import (
 	//"fmt"
 	"errors"
+	"github.com/golang-jwt/jwt/v5"
 	"os"
 	"time"
-	"github.com/golang-jwt/jwt/v5"
 )
 
 func GenerateJwtToken(email string, id int64) (string, error) {
@@ -13,8 +13,8 @@ func GenerateJwtToken(email string, id int64) (string, error) {
 		jwt.SigningMethodHS256,
 		jwt.MapClaims{
 			"userEmail": email,
-			"userId": id,
-			"exp": time.Now().Add(time.Hour * 2).Unix(),
+			"userId":    id,
+			"exp":       time.Now().Add(time.Hour * 2).Unix(),
 		},
 	)
 
@@ -23,8 +23,8 @@ func GenerateJwtToken(email string, id int64) (string, error) {
 
 func VerifyToken(token string) (jwt.MapClaims, error) {
 	parsedToken, err := jwt.Parse(
-		token, 
-		func(token *jwt.Token) (any, error) { return getJwtSecret(), nil }, 
+		token,
+		func(token *jwt.Token) (any, error) { return getJwtSecret(), nil },
 		jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}),
 	)
 
@@ -32,7 +32,7 @@ func VerifyToken(token string) (jwt.MapClaims, error) {
 		return nil, err
 	}
 
-	claims, ok := parsedToken.Claims.(jwt.MapClaims);
+	claims, ok := parsedToken.Claims.(jwt.MapClaims)
 
 	if !ok {
 		return nil, err
@@ -43,7 +43,6 @@ func VerifyToken(token string) (jwt.MapClaims, error) {
 	if !ok {
 		return nil, errors.New("Invalid Token")
 	}
-
 
 	expDate := time.Unix(int64(exp), 0)
 
@@ -57,4 +56,3 @@ func VerifyToken(token string) (jwt.MapClaims, error) {
 func getJwtSecret() []byte {
 	return []byte(os.Getenv("JWT_SECRET"))
 }
-

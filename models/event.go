@@ -1,27 +1,27 @@
 package models
 
 import (
-	"time"
 	"errors"
 	"example.com/event_booking/db"
+	"time"
 )
 
 type Event struct {
-	ID int64
-	Name string `binding:"required"`
-	Description string `binding:"required"`
-	Location string `binding:"required"`
-	DateTime time.Time `binding:"required"`
-	UserID int64
+	ID          int64
+	Name        string    `binding:"required"`
+	Description string    `binding:"required"`
+	Location    string    `binding:"required"`
+	DateTime    time.Time `binding:"required"`
+	UserID      int64
 }
 
 func New(id int64, name string, desc string, date time.Time, userId int64) Event {
 	return Event{
-		ID: id,
-		Name: name,
+		ID:          id,
+		Name:        name,
 		Description: desc,
-		DateTime: date, 
-		UserID: userId,
+		DateTime:    date,
+		UserID:      userId,
 	}
 }
 
@@ -35,11 +35,11 @@ func (event *Event) Save() error {
 	defer stmt.Close()
 
 	result, err := stmt.Exec(event.Name, event.Description, event.Location, event.DateTime, event.UserID)
-	 
+
 	if err != nil {
 		return err
-	} 
-	
+	}
+
 	generatedId, err := result.LastInsertId()
 
 	event.ID = generatedId
@@ -53,14 +53,14 @@ func FindEvent(id int64) (*Event, error) {
 
 	err := row.Scan(&event.ID, &event.Name, &event.Description, &event.Location, &event.DateTime, &event.UserID)
 
-	if err != nil { 
+	if err != nil {
 		return nil, err
 	}
 
 	return &event, err
 }
 
-func FindEventByIdUserId(id, userId int64) (*Event, error){
+func FindEventByIdUserId(id, userId int64) (*Event, error) {
 	row := db.DB.QueryRow("SELECT * FROM events WHERE id = ? AND user_id = ?", id, userId)
 	event := Event{}
 
@@ -76,7 +76,7 @@ func FindEventByIdUserId(id, userId int64) (*Event, error){
 func GetAllEvents() ([]Event, error) {
 	query := "SELECT * FROM events;"
 	rows, err := db.DB.Query(query)
-	
+
 	if err != nil {
 		return nil, err
 	}
@@ -111,15 +111,15 @@ func (event *Event) Update() error {
 	stmt, err := db.DB.Prepare(query)
 
 	if err != nil {
-		return  err
+		return err
 	}
 
 	defer stmt.Close()
 
 	_, err = stmt.Exec(
-		event.Name, 
-		event.Description, 
-		event.Location, 
+		event.Name,
+		event.Description,
+		event.Location,
 		event.DateTime,
 		event.UserID,
 		event.ID,
@@ -128,7 +128,7 @@ func (event *Event) Update() error {
 	return err
 }
 
-func (event * Event) Delete() error {
+func (event *Event) Delete() error {
 	query := "DELETE FROM events WHERE id = ?;"
 	stmt, err := db.DB.Prepare(query)
 
@@ -148,7 +148,6 @@ func (event *Event) RegisterUser(user *User) error {
 		return errors.New("User is an owner of the event")
 	}
 
-	
 	if isUserRegisteredToEvent(user, event) {
 		return errors.New("User already registered")
 	}

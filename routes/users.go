@@ -1,11 +1,11 @@
 package routes
 
 import (
-	"fmt"
-	"net/http"
-	"github.com/gin-gonic/gin"
 	"example.com/event_booking/models"
 	"example.com/event_booking/utils"
+	"fmt"
+	"github.com/gin-gonic/gin"
+	"net/http"
 )
 
 func signup(context *gin.Context) {
@@ -16,14 +16,14 @@ func signup(context *gin.Context) {
 		context.JSON(http.StatusBadRequest, gin.H{"message": "Invalid params", "error": err})
 		return
 	}
-	
+
 	err = user.Save()
 	if err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{"message": "Could not create an user", "error": err})
 		return
 	}
 
-	context.JSON(http.StatusCreated, gin.H{ "message": "User created", "user": user })
+	context.JSON(http.StatusCreated, gin.H{"message": "User created", "user": user})
 }
 
 func login(context *gin.Context) {
@@ -51,6 +51,6 @@ func login(context *gin.Context) {
 	}
 
 	fmt.Println(utils.VerifyToken(token))
-	
-	context.JSON(http.StatusOK, gin.H{ "message": "Sign", "token": token })
+
+	context.JSON(http.StatusOK, gin.H{"message": "Sign", "token": token})
 }

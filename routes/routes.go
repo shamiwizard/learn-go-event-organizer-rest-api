@@ -1,10 +1,9 @@
 package routes
 
 import (
-	"github.com/gin-gonic/gin"
 	"example.com/event_booking/middleware"
+	"github.com/gin-gonic/gin"
 )
-
 
 func RegisterRoutes(server *gin.Engine) {
 	v1 := server.Group("/api/v1/")
@@ -22,10 +21,7 @@ func RegisterRoutes(server *gin.Engine) {
 		authGroup.POST("/events/:id/register", registerForEvent)
 		authGroup.DELETE("/events/:id/register", cancelRegistration)
 
-
-
-		v1.POST("/signup",signup)
+		v1.POST("/signup", signup)
 		v1.POST("/login", login)
 	}
 }
-

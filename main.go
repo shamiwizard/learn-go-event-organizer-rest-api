@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/gin-gonic/gin"
-	"example.com/event_booking/routes"
 	"example.com/event_booking/db"
+	"example.com/event_booking/routes"
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
@@ -14,4 +14,3 @@ func main() {
 
 	server.Run(":3000")
 }
-
