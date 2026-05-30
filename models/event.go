@@ -26,15 +26,39 @@ func New(id int64, name string, desc string, date time.Time, userId int64) Event
 }
 
 func (event *Event) Save() error {
-	query := `INSERT INTO events (name, description, location, date_time, user_id)
-						VALUES (?, ?, ?, ?, ?);`
+	var query string
+	updateColumn := []any{
+		event.Name,
+		event.Description,
+		event.Location,
+		event.DateTime,
+		event.UserID,
+	}
+
+	if event.ID == 0 {
+		query = `INSERT INTO events (name, description, location, date_time, user_id)
+		VALUES (?, ?, ?, ?, ?);`
+	} else {
+		query = `UPDATE events
+		SET name = ?,
+				description = ?,
+				location = ?,
+				date_time = ?,
+				user_id = ?
+		WHERE id = ?
+		`
+		updateColumn = append(updateColumn, event.ID)
+	}
+
 	stmt, err := db.DB.Prepare(query)
+
 	if err != nil {
 		return err
 	}
+
 	defer stmt.Close()
 
-	result, err := stmt.Exec(event.Name, event.Description, event.Location, event.DateTime, event.UserID)
+	result, err := stmt.Exec(updateColumn...)
 
 	if err != nil {
 		return err
@@ -53,10 +77,6 @@ func FindEvent(id int64) (*Event, error) {
 
 	err := row.Scan(&event.ID, &event.Name, &event.Description, &event.Location, &event.DateTime, &event.UserID)
 
-	if err != nil {
-		return nil, err
-	}
-
 	return &event, err
 }
 
@@ -65,10 +85,6 @@ func FindEventByIdUserId(id, userId int64) (*Event, error) {
 	event := Event{}
 
 	err := row.Scan(&event.ID, &event.Name, &event.Description, &event.Location, &event.DateTime, &event.UserID)
-
-	if err != nil {
-		return nil, err
-	}
 
 	return &event, err
 }
