@@ -203,3 +203,85 @@ func TestFindEventByIdUserId(t *testing.T) {
 		})
 	}
 }
+
+func TestGetAllEvents(t *testing.T) {
+	tests := []struct {
+		name string
+		test func() (bool, error)
+	}{
+		{
+			name: "it returns all events in DB",
+			test: func() (bool, error) {
+				for index := range 2 {
+					event := Event{
+						Name:        fmt.Sprint("Test name", index),
+						Description: "description",
+						Location:    "USA",
+						DateTime:    time.Now(),
+					}
+					event.Save()
+				}
+
+				events, err := GetAllEvents()
+
+				return !(len(events) >= 2 && err == nil), err
+			},
+		},
+		{
+			name: "It return empty slice when there is not events",
+			test: func() (bool, error) {
+				_, err := db.DB.Exec("DELETE FROM events;")
+
+				if err != nil {
+					return true, err
+				}
+
+				events, err := GetAllEvents()
+
+				return !(len(events) == 0 && err == nil), err
+			},
+		},
+		{
+			name: "It return nil and error when query failed",
+			test: func() (bool, error) {
+				var events []Event
+				var err error
+				mockDb(func(mock sqlmock.Sqlmock) {
+					mock.ExpectQuery(`SELECT \* FROM events;`).
+						WillReturnError(fmt.Errorf("some error"))
+
+					events, err = GetAllEvents()
+				})
+
+				return !(len(events) == 0 && err != nil), err
+			},
+		},
+		{
+			name: "It return nil and error when one of the row falied",
+			test: func() (bool, error) {
+				var events []Event
+				var err error
+
+				mockDb(func(mock sqlmock.Sqlmock) {
+					rows := sqlmock.NewRows([]string{"id", "name", "description", "location", "date_time", "user_id"}).
+						AddRow(1, "Test", "Test decription", "USA", time.Now(), 2).
+						AddRow(2, "Test", "Test decription", "USA", "error date", 2)
+
+					mock.ExpectQuery(`SELECT \* FROM events;`).WillReturnRows(rows)
+
+					events, err = GetAllEvents()
+				})
+
+				return !(len(events) == 0 && err != nil), err
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if got, err := test.test(); got {
+				t.Errorf("Test faild with error: %v", err)
+			}
+		})
+	}
+}
