@@ -79,7 +79,7 @@ func updateEvent(context *gin.Context) {
 		return
 	}
 
-	err = event.Update()
+	err = event.Save()
 
 	if err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{"message": "Could not update an event", "error": err})

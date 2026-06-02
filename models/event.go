@@ -26,47 +26,13 @@ func New(id int64, name string, desc string, date time.Time, userId int64) Event
 }
 
 func (event *Event) Save() error {
-	var query string
-	updateColumn := []any{
-		event.Name,
-		event.Description,
-		event.Location,
-		event.DateTime,
-		event.UserID,
-	}
+	var err error
 
 	if event.ID == 0 {
-		query = `INSERT INTO events (name, description, location, date_time, user_id)
-		VALUES (?, ?, ?, ?, ?);`
+		err = event.Create()
 	} else {
-		query = `UPDATE events
-		SET name = ?,
-				description = ?,
-				location = ?,
-				date_time = ?,
-				user_id = ?
-		WHERE id = ?
-		`
-		updateColumn = append(updateColumn, event.ID)
+		err = event.Update()
 	}
-
-	stmt, err := db.DB.Prepare(query)
-
-	if err != nil {
-		return err
-	}
-
-	defer stmt.Close()
-
-	result, err := stmt.Exec(updateColumn...)
-
-	if err != nil {
-		return err
-	}
-
-	generatedId, err := result.LastInsertId()
-
-	event.ID = generatedId
 
 	return err
 }
@@ -113,6 +79,37 @@ func GetAllEvents() ([]Event, error) {
 	}
 
 	return events, err
+}
+
+func (event *Event) Create() error {
+	query := `INSERT INTO events (name, description, location, date_time, user_id)
+	VALUES (?, ?, ?, ?, ?);`
+
+	stmt, err := db.DB.Prepare(query)
+
+	if err != nil {
+		return err
+	}
+
+	defer stmt.Close()
+
+	result, err := stmt.Exec(
+		event.Name,
+		event.Description,
+		event.Location,
+		event.DateTime,
+		event.UserID,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	generatedId, err := result.LastInsertId()
+
+	event.ID = generatedId
+
+	return err
 }
 
 func (event *Event) Update() error {
