@@ -31,6 +31,16 @@ func mockDb(code func(sqlmock.Sqlmock)) {
 	code(mock)
 }
 
+func newEvent(index int) Event {
+	return Event{
+		Name:        fmt.Sprint("Test name", index),
+		Description: "Test description",
+		Location:    "USA",
+		DateTime:    time.Now(),
+		UserID:      1,
+	}
+}
+
 func TestSave(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -75,7 +85,7 @@ func TestSave(t *testing.T) {
 			},
 		},
 		{
-			name: "It return an error if LastInsertedId failed",
+			name: "It return an error when LastInsertedId failed",
 			expected: func(event *Event) (bool, error) {
 				var err error
 
@@ -105,12 +115,7 @@ func TestSave(t *testing.T) {
 	var event Event
 
 	for _, test := range tests {
-		event = Event{
-			Name:        "Test name",
-			Description: "Test description",
-			DateTime:    time.Now(),
-			UserID:      4,
-		}
+		event = newEvent(1)
 
 		t.Run(test.name, func(t *testing.T) {
 			if got, err := test.expected(&event); got {
@@ -213,12 +218,7 @@ func TestGetAllEvents(t *testing.T) {
 			name: "it returns all events in DB",
 			test: func() (bool, error) {
 				for index := range 2 {
-					event := Event{
-						Name:        fmt.Sprint("Test name", index),
-						Description: "description",
-						Location:    "USA",
-						DateTime:    time.Now(),
-					}
+					event := newEvent(index)
 					event.Save()
 				}
 
@@ -281,6 +281,421 @@ func TestGetAllEvents(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			if got, err := test.test(); got {
 				t.Errorf("Test faild with error: %v", err)
+			}
+		})
+	}
+}
+
+func TestCreate(t *testing.T) {
+	tests := []struct {
+		name string
+		test func() (bool, error)
+	}{
+		{
+			name: "It stores event in db if there is no error",
+			test: func() (bool, error) {
+				newEvent := newEvent(1)
+
+				newEvent.Create()
+
+				event, err := FindEvent(newEvent.ID)
+
+				return !(event != nil && err == nil), err
+			},
+		},
+		{
+			name: "It returns an error if event has an id",
+			test: func() (bool, error) {
+				event := newEvent(1)
+				event.ID = 1
+
+				err := event.Create()
+
+				return err.Error() != "Event already stored in DB", err
+			},
+		},
+		{
+			name: "It return an error when query preparetion returns an error",
+			test: func() (bool, error) {
+				var event Event
+				var err error
+
+				mockDb(func(mock sqlmock.Sqlmock) {
+					mock.ExpectPrepare(`INSERT INTO events \(name, description, location, date_time, user_id\)`).
+						WillReturnError(fmt.Errorf("some error"))
+
+					event = newEvent(1)
+					err = event.Create()
+				})
+
+				return !(event.ID == 0 && err.Error() == "some error"), err
+			},
+		},
+		{
+			name: "It return an error when query failed to execute",
+			test: func() (bool, error) {
+				var event Event
+				var err error
+
+				mockDb(func(mock sqlmock.Sqlmock) {
+					event = newEvent(1)
+
+					mock.ExpectPrepare(`INSERT INTO events \(name, description, location, date_time, user_id\)`).
+						ExpectExec().
+						WithArgs(event.Name, event.Description, event.Location, event.DateTime, event.UserID).
+						WillReturnError(fmt.Errorf("some error"))
+
+					err = event.Create()
+				})
+
+				return !(event.ID == 0 && err.Error() == "some error"), err
+			},
+		},
+		{
+			name: "It return an error when insert result does not have last insert id",
+			test: func() (bool, error) {
+				var event Event
+				var err error
+
+				mockDb(func(mock sqlmock.Sqlmock) {
+					event = newEvent(1)
+
+					mock.ExpectPrepare(`INSERT INTO events \(name, description, location, date_time, user_id\)`).
+						ExpectExec().
+						WithArgs(event.Name, event.Description, event.Location, event.DateTime, event.UserID).
+						WillReturnResult(sqlmock.NewErrorResult(errors.New("some error")))
+
+					err = event.Create()
+				})
+
+				return !(event.ID == 0 && err.Error() == "some error"), err
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if got, err := test.test(); got {
+				t.Errorf("Test faild with error: %v", err)
+			}
+		})
+	}
+}
+
+func TestUpdate(t *testing.T) {
+	tests := []struct {
+		name string
+		test func() (bool, error)
+	}{
+		{
+			name: "It updates event",
+			test: func() (bool, error) {
+				newEvent := newEvent(1)
+				err := newEvent.Create()
+
+				newName := "Update name"
+				newEvent.Name = newName
+
+				err = newEvent.Update()
+
+				event, err := FindEvent(newEvent.ID)
+
+				return !(event.Name == newName && err == nil), err
+			},
+		},
+		{
+			name: "It returns an error when event have incorrect id",
+			test: func() (bool, error) {
+				event := newEvent(1)
+
+				err := event.Update()
+
+				return !(err.Error() == "The id is incorrect"), err
+			},
+		},
+		{
+			name: "It returns an error when query could not be prepared",
+			test: func() (bool, error) {
+				var err error
+				event := newEvent(1)
+				event.ID = 1
+
+				mockDb(func(mock sqlmock.Sqlmock) {
+					mock.ExpectPrepare(`UPDATE events SET (.*) WHERE id = ?`).
+						WillReturnError(fmt.Errorf("some error"))
+					err = event.Update()
+				})
+
+				return !(err.Error() == "some error"), err
+			},
+		},
+		{
+			name: "It returns an error when query could not be executed",
+			test: func() (bool, error) {
+				var err error
+				event := newEvent(1)
+				event.ID = 1
+
+				mockDb(func(mock sqlmock.Sqlmock) {
+					mock.ExpectPrepare(`UPDATE events SET (.*) WHERE id = ?`).
+						ExpectExec().
+						WithArgs(event.Name, event.Description, event.Location, event.DateTime, event.UserID, event.ID).
+						WillReturnError(fmt.Errorf("some error"))
+
+					err = event.Update()
+				})
+
+				return !(err.Error() == "some error"), err
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if got, err := test.test(); got {
+				t.Errorf("Test faild with error: %v", err)
+			}
+		})
+	}
+}
+
+func TestDelete(t *testing.T) {
+	tests := []struct {
+		name string
+		test func() (bool, error)
+	}{
+		{
+			name: "It delete event when there is no error",
+			test: func() (bool, error) {
+				deletedEvent := newEvent(1)
+				deletedEvent.Create()
+				eventId := deletedEvent.ID
+				deleteErr := deletedEvent.Delete()
+
+				event, findErr := FindEvent(eventId)
+				return !(*event == Event{} && deleteErr == nil && findErr.Error() == "sql: no rows in result set"), deleteErr
+			},
+		},
+		{
+			name: "It returns an error when query could not be prepared",
+			test: func() (bool, error) {
+				var err error
+				event := newEvent(1)
+				event.ID = 1
+
+				mockDb(func(mock sqlmock.Sqlmock) {
+					mock.ExpectPrepare(`DELETE FROM events WHERE id =`).
+						WillReturnError(fmt.Errorf("some error"))
+					err = event.Delete()
+				})
+
+				return !(err.Error() == "some error"), err
+			},
+		},
+		{
+			name: "It returns an error when query could not be executed",
+			test: func() (bool, error) {
+				var err error
+				event := newEvent(1)
+				event.ID = 1
+
+				mockDb(func(mock sqlmock.Sqlmock) {
+					mock.ExpectPrepare(`DELETE FROM events WHERE id =`).
+						ExpectExec().
+						WithArgs(event.ID).
+						WillReturnError(fmt.Errorf("some error"))
+
+					err = event.Delete()
+				})
+
+				return !(err.Error() == "some error"), err
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if got, err := test.test(); got {
+				t.Errorf("Test faild with error: %v", err)
+			}
+		})
+	}
+}
+
+func TestRegisterUser(t *testing.T) {
+	tests := []struct {
+		name string
+		test func() (bool, error)
+	}{
+		{
+			name: "It creates new registration record",
+			test: func() (bool, error) {
+				event := newEvent(1)
+				event.UserID = 0
+				user := User{
+					Email:    "test@mail.com",
+					Password: "test12345",
+				}
+
+				err := event.Save()
+				err = user.Save()
+				err = event.RegisterUser(&user)
+
+				return !(err == nil), err
+			},
+		},
+		{
+			name: "It returns an error when user already registered",
+			test: func() (bool, error) {
+				event := newEvent(1)
+				user := User{
+					Email:    "test@mail.com",
+					Password: "test12345",
+				}
+
+				err := event.Save()
+				err = user.Save()
+
+				err = event.RegisterUser(&user)
+				err = event.RegisterUser(&user)
+
+				return !(err.Error() == "User already registered"), err
+			},
+		},
+		{
+			name: "It returns an error when user is an owner of the event",
+			test: func() (bool, error) {
+				event := newEvent(1)
+				user := User{
+					Email:    "test@mail.com",
+					Password: "test12345",
+				}
+
+				err := user.Save()
+				event.UserID = user.ID
+
+				err = event.Save()
+
+				err = event.RegisterUser(&user)
+
+				return !(err.Error() == "User is an owner of the event"), err
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if got, err := test.test(); got {
+				t.Errorf("Test faild with error: %v", err)
+			}
+
+			db.DB.Exec("DELETE FROM users;")
+		})
+	}
+}
+
+func TestCancelRegistration(t *testing.T) {
+	tests := []struct {
+		name string
+		test func() (bool, error)
+	}{
+		{
+			name: "It creates cancel registration",
+			test: func() (bool, error) {
+				event := newEvent(1)
+				event.UserID = 0
+				user := User{
+					Email:    "test@mail.com",
+					Password: "test12345",
+				}
+
+				err := event.Save()
+				err = user.Save()
+				err = event.RegisterUser(&user)
+				err = event.CancelRegistration(&user)
+
+				return !(err == nil), err
+			},
+		},
+		{
+			name: "It returns an error when user is not registered yet",
+			test: func() (bool, error) {
+				event := newEvent(1)
+				user := User{
+					Email:    "test@mail.com",
+					Password: "test12345",
+				}
+
+				err := event.Save()
+				err = user.Save()
+
+				err = event.CancelRegistration(&user)
+
+				return !(err.Error() == "User is not registered to the event"), err
+			},
+		},
+		{
+			name: "It returns an error when user is an owner of the event",
+			test: func() (bool, error) {
+				event := newEvent(1)
+				user := User{
+					Email:    "test@mail.com",
+					Password: "test12345",
+				}
+
+				err := user.Save()
+				event.UserID = user.ID
+
+				err = event.Save()
+
+				err = event.CancelRegistration(&user)
+
+				return !(err.Error() == "User is an owner of the event"), err
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if got, err := test.test(); got {
+				t.Errorf("Test faild with error: %v", err)
+			}
+
+			db.DB.Exec("DELETE FROM users;")
+		})
+	}
+}
+
+func TestIsUserOwner(t *testing.T) {
+	tests := []struct {
+		name string
+		want bool
+		got  func() bool
+	}{
+		{
+			name: "It return true when event.UserID is the same as user.ID",
+			want: true,
+			got: func() bool {
+				event := newEvent(1)
+				return event.isUserOwner(&User{ID: 1})
+			},
+		},
+		{
+			name: "It return false when event.UserID is different from user.ID",
+			want: false,
+			got: func() bool {
+				event := newEvent(1)
+				return event.isUserOwner(&User{ID: 5})
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			want := test.want
+			got := test.got()
+
+			if want != got {
+				t.Errorf("Failed test. want: %v; got: %v", want, got)
 			}
 		})
 	}

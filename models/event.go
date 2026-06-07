@@ -82,6 +82,10 @@ func GetAllEvents() ([]Event, error) {
 }
 
 func (event *Event) Create() error {
+	if event.ID != 0 {
+		return errors.New("Event already stored in DB")
+	}
+
 	query := `INSERT INTO events (name, description, location, date_time, user_id)
 	VALUES (?, ?, ?, ?, ?);`
 
@@ -113,6 +117,10 @@ func (event *Event) Create() error {
 }
 
 func (event *Event) Update() error {
+	if event.ID == 0 {
+		return errors.New("The id is incorrect")
+	}
+
 	query := `UPDATE events 
 						SET name = ?,
 								description = ?,
