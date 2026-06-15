@@ -1,7 +1,6 @@
 package utils
 
 import (
-	//"fmt"
 	"errors"
 	"github.com/golang-jwt/jwt/v5"
 	"os"
@@ -34,19 +33,7 @@ func VerifyToken(token string) (jwt.MapClaims, error) {
 
 	claims, ok := parsedToken.Claims.(jwt.MapClaims)
 
-	if !ok {
-		return nil, err
-	}
-
-	exp, ok := claims["exp"].(float64)
-
-	if !ok {
-		return nil, errors.New("Invalid Token")
-	}
-
-	expDate := time.Unix(int64(exp), 0)
-
-	if !time.Now().Before(expDate) {
+	if !ok || len(claims) == 0 {
 		return nil, errors.New("Invalid Token")
 	}
 
