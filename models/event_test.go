@@ -3,6 +3,7 @@ package models
 import (
 	"errors"
 	"example.com/event_booking/db"
+	"example.com/event_booking/testutils"
 	"fmt"
 	"github.com/DATA-DOG/go-sqlmock"
 	"testing"
@@ -11,24 +12,6 @@ import (
 
 func init() {
 	db.InitDB("_testing", "memory")
-}
-
-func mockDb(code func(sqlmock.Sqlmock)) {
-	mockedDb, mock, err := sqlmock.New()
-
-	if err != nil {
-		panic(err)
-	}
-
-	original := db.DB
-	db.DB = mockedDb
-
-	defer func() {
-		db.DB.Close()
-		db.DB = original
-	}()
-
-	code(mock)
 }
 
 func newEvent(index int) Event {
@@ -59,7 +42,7 @@ func TestSave(t *testing.T) {
 			expected: func(event *Event) (bool, error) {
 				var err error
 
-				mockDb(func(mock sqlmock.Sqlmock) {
+				testutils.MockDb(func(mock sqlmock.Sqlmock) {
 					mock.ExpectPrepare(`INSERT INTO events \(name, description, location, date_time, user_id\)`).
 						WillReturnError(fmt.Errorf("some error"))
 					err = event.Save()
@@ -73,7 +56,7 @@ func TestSave(t *testing.T) {
 			expected: func(event *Event) (bool, error) {
 				var err error
 
-				mockDb(func(mock sqlmock.Sqlmock) {
+				testutils.MockDb(func(mock sqlmock.Sqlmock) {
 					mock.ExpectPrepare(`INSERT INTO events \(name, description, location, date_time, user_id\)`).
 						ExpectExec().
 						WithArgs(event.Name, event.Description, event.Location, event.DateTime, event.UserID).
@@ -89,7 +72,7 @@ func TestSave(t *testing.T) {
 			expected: func(event *Event) (bool, error) {
 				var err error
 
-				mockDb(func(mock sqlmock.Sqlmock) {
+				testutils.MockDb(func(mock sqlmock.Sqlmock) {
 					mock.ExpectPrepare(`INSERT INTO events \(name, description, location, date_time, user_id\)`).
 						ExpectExec().
 						WithArgs(event.Name, event.Description, event.Location, event.DateTime, event.UserID).
@@ -138,7 +121,7 @@ func TestFindEvent(t *testing.T) {
 				var event *Event
 				var err error
 
-				mockDb(func(mock sqlmock.Sqlmock) {
+				testutils.MockDb(func(mock sqlmock.Sqlmock) {
 					mock.ExpectQuery(`SELECT \* FROM events WHERE id =`).
 						WithArgs(1).
 						WillReturnRows(rows)
@@ -246,7 +229,7 @@ func TestGetAllEvents(t *testing.T) {
 			test: func() (bool, error) {
 				var events []Event
 				var err error
-				mockDb(func(mock sqlmock.Sqlmock) {
+				testutils.MockDb(func(mock sqlmock.Sqlmock) {
 					mock.ExpectQuery(`SELECT \* FROM events;`).
 						WillReturnError(fmt.Errorf("some error"))
 
@@ -262,7 +245,7 @@ func TestGetAllEvents(t *testing.T) {
 				var events []Event
 				var err error
 
-				mockDb(func(mock sqlmock.Sqlmock) {
+				testutils.MockDb(func(mock sqlmock.Sqlmock) {
 					rows := sqlmock.NewRows([]string{"id", "name", "description", "location", "date_time", "user_id"}).
 						AddRow(1, "Test", "Test decription", "USA", time.Now(), 2).
 						AddRow(2, "Test", "Test decription", "USA", "error date", 2)
@@ -320,7 +303,7 @@ func TestCreate(t *testing.T) {
 				var event Event
 				var err error
 
-				mockDb(func(mock sqlmock.Sqlmock) {
+				testutils.MockDb(func(mock sqlmock.Sqlmock) {
 					mock.ExpectPrepare(`INSERT INTO events \(name, description, location, date_time, user_id\)`).
 						WillReturnError(fmt.Errorf("some error"))
 
@@ -337,7 +320,7 @@ func TestCreate(t *testing.T) {
 				var event Event
 				var err error
 
-				mockDb(func(mock sqlmock.Sqlmock) {
+				testutils.MockDb(func(mock sqlmock.Sqlmock) {
 					event = newEvent(1)
 
 					mock.ExpectPrepare(`INSERT INTO events \(name, description, location, date_time, user_id\)`).
@@ -357,7 +340,7 @@ func TestCreate(t *testing.T) {
 				var event Event
 				var err error
 
-				mockDb(func(mock sqlmock.Sqlmock) {
+				testutils.MockDb(func(mock sqlmock.Sqlmock) {
 					event = newEvent(1)
 
 					mock.ExpectPrepare(`INSERT INTO events \(name, description, location, date_time, user_id\)`).
@@ -420,7 +403,7 @@ func TestUpdate(t *testing.T) {
 				event := newEvent(1)
 				event.ID = 1
 
-				mockDb(func(mock sqlmock.Sqlmock) {
+				testutils.MockDb(func(mock sqlmock.Sqlmock) {
 					mock.ExpectPrepare(`UPDATE events SET (.*) WHERE id = ?`).
 						WillReturnError(fmt.Errorf("some error"))
 					err = event.Update()
@@ -436,7 +419,7 @@ func TestUpdate(t *testing.T) {
 				event := newEvent(1)
 				event.ID = 1
 
-				mockDb(func(mock sqlmock.Sqlmock) {
+				testutils.MockDb(func(mock sqlmock.Sqlmock) {
 					mock.ExpectPrepare(`UPDATE events SET (.*) WHERE id = ?`).
 						ExpectExec().
 						WithArgs(event.Name, event.Description, event.Location, event.DateTime, event.UserID, event.ID).
@@ -483,7 +466,7 @@ func TestDelete(t *testing.T) {
 				event := newEvent(1)
 				event.ID = 1
 
-				mockDb(func(mock sqlmock.Sqlmock) {
+				testutils.MockDb(func(mock sqlmock.Sqlmock) {
 					mock.ExpectPrepare(`DELETE FROM events WHERE id =`).
 						WillReturnError(fmt.Errorf("some error"))
 					err = event.Delete()
@@ -499,7 +482,7 @@ func TestDelete(t *testing.T) {
 				event := newEvent(1)
 				event.ID = 1
 
-				mockDb(func(mock sqlmock.Sqlmock) {
+				testutils.MockDb(func(mock sqlmock.Sqlmock) {
 					mock.ExpectPrepare(`DELETE FROM events WHERE id =`).
 						ExpectExec().
 						WithArgs(event.ID).
